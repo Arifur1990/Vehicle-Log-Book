@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Vehicle Logbook — iTracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --green-dark: #0F6E56;
+    --green-mid: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-border: #9FE1CB;
+    --text: #1a1a1a;
+    --text-muted: #5a6a6a;
+    --text-hint: #8a9a9a;
+    --bg: #f5faf8;
+    --card: #ffffff;
+    --border: rgba(15,110,86,0.18);
+    --border-strong: rgba(15,110,86,0.35);
+    --input-bg: #f8fdfb;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* Header */
+  .header {
+    background: var(--green-dark);
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-icon {
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .header-text h1 {
+    font-size: 18px; font-weight: 700;
+    color: #fff; letter-spacing: -0.3px;
+  }
+  .header-text p {
+    font-size: 12px; color: var(--green-border);
+    margin-top: 1px;
+  }
+
+  /* Date banner */
+  .date-banner {
+    background: var(--green-mid);
+    padding: 10px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .date-banner .date-label {
+    font-size: 11px; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .date-banner .date-value {
+    font-size: 16px; font-weight: 700; color: #fff;
+  }
+  .date-banner .day-pill {
+    background: rgba(255,255,255,0.2);
+    color: #fff; font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 0;
+    background: var(--card);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .tab {
+    flex: 1; padding: 13px 8px;
+    font-size: 13px; font-weight: 500;
+    text-align: center; cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2.5px solid transparent;
+    transition: all 0.2s;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: inherit;
+  }
+  .tab.active {
+    color: var(--green-dark);
+    border-bottom-color: var(--green-dark);
+  }
+
+  /* Content sections */
+  .view { display: none; padding: 16px; }
+  .view.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 11px; font-weight: 600;
+    color: var(--green-dark); letter-spacing: 0.6px;
+    text-transform: uppercase; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-title::before {
+    content: ''; display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--green-mid); border-radius: 2px;
+  }
+
+  /* Fields */
+  .field { margin-bottom: 13px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 5px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 10px 13px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--input-bg);
+    color: var(--text);
+    font-family: inherit;
+    appearance: none; -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--green-mid);
+    background: #fff;
+  }
+  .field input[readonly] {
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-weight: 600;
+    border-color: var(--green-border);
+    cursor: default;
+  }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230F6E56' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+  .field textarea { resize: none; min-height: 70px; font-size: 14px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--green-dark);
+    color: #fff;
+    font-size: 15px; font-weight: 700;
+    border: none; border-radius: var(--radius);
+    cursor: pointer; font-family: inherit;
+    letter-spacing: 0.2px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-submit:active { background: #085041; transform: scale(0.98); }
+  .btn-submit svg { width: 18px; height: 18px; }
+
+  /* Toast */
+  .toast {
+    display: none;
+    background: var(--green-light);
+    border: 1px solid var(--green-border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-size: 13px; color: #085041; font-weight: 500;
+    margin-bottom: 14px;
+    align-items: center; gap: 8px;
+  }
+  .toast.show { display: flex; }
+  .toast-err {
+    background: #fef2f2; border-color: #fca5a5;
+    color: #991b1b;
+  }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat {
+    background: var(--green-light);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    border: 0.5px solid var(--green-border);
+  }
+  .stat-label { font-size: 11px; color: var(--green-dark); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--green-dark); }
+  .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* History list */
+  .history-item {
+    padding: 13px 0;
+    border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .history-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .h-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green-mid); margin-top: 5px; flex-shrink: 0;
+  }
+  .h-body { flex: 1; min-width: 0; }
+  .h-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .h-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .h-badge {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 20px;
+    background: var(--green-light); color: var(--green-dark);
+    flex-shrink: 0; white-space: nowrap; margin-top: 2px;
+  }
+
+  /* Setup section */
+  .setup-step {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 0; border-bottom: 0.5px solid var(--border);
+  }
+  .setup-step:last-child { border-bottom: none; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--green-dark); color: #fff;
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-body h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .step-body p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .code-block {
+    background: #f1f5f3; border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px;
+    font-family: 'Courier New', monospace; font-size: 12px;
+    color: var(--green-dark); margin-top: 8px;
+    word-break: break-all; line-height: 1.6;
+  }
+  .copy-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--green-dark);
+    background: var(--green-light); border: 0.5px solid var(--green-border);
+    border-radius: 6px; padding: 5px 10px; cursor: pointer;
+    font-family: inherit; margin-top: 6px; font-weight: 500;
+  }
+  .empty { text-align: center; padding: 30px 0; color: var(--text-hint); font-size: 13px; }
+  .sheet-url-input {
+    width: 100%; padding: 10px 12px;
+    font-size: 13px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--input-bg);
+    color: var(--text); font-family: inherit; margin-top: 8px;
+  }
+  .save-url-btn {
+    margin-top: 8px; width: 100%; padding: 10px;
+    background: var(--green-dark); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .connected-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--green-light); border: 0.5px solid var(--green-border);
+    border-radius: 20px; padding: 4px 10px;
+    font-size: 12px; color: #085041; font-weight: 600;
+  }
+  .dot-live { width: 6px; height: 6px; border-radius: 50%; background: var(--green-mid); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-icon">🚗</div>
+  <div class="header-text">
+    <h1>Vehicle Logbook</h1>
+    <p id="connection-status">Not connected to Google Sheets</p>
+  </div>
+</div>
+
+<!-- Date Banner -->
+<div class="date-banner">
+  <div>
+    <div class="date-label">Today's date</div>
+    <div class="date-value" id="banner-date">—</div>
+  </div>
+  <div class="day-pill" id="banner-day">—</div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('log', this)">Log Trip</button>
+  <button class="tab" onclick="switchTab('history', this)">History</button>
+  <button class="tab" onclick="switchTab('setup', this)">Setup</button>
+</div>
+
+<!-- LOG TRIP VIEW -->
+<div class="view active" id="view-log">
+  <div id="toast-success" class="toast">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    Trip saved successfully to Google Sheets!
+  </div>
+  <div id="toast-error" class="toast toast-err">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16.5" stroke-linecap="round"/></svg>
+    <span id="toast-error-msg">Could not save. Check your setup.</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Date &amp; Time</div>
+    <div class="field">
+      <label>Date (auto-filled)</label>
+      <input type="text" id="f-date" readonly>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Start time</label>
+        <input type="time" id="f-start-time">
+      </div>
+      <div class="field">
+        <label>End time</label>
+        <input type="time" id="f-end-time">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Trip Details</div>
+    <div class="field">
+      <label>User name</label>
+      <input type="text" id="f-user" placeholder="Your full name" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Purpose</label>
+      <select id="f-purpose">
+        <option value="">— Select purpose —</option>
+        <option>Business</option>
+        <option>Delivery</option>
+        <option>Official</option>
+        <option>Personal</option>
+        <option>Maintenance</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>End location</label>
+      <input type="text" id="f-location" placeholder="e.g. Gazipur, Uttara, Motijheel">
+    </div>
+    <div class="field">
+      <label>Remarks <span style="font-weight:400;color:var(--text-hint)">(optional)</span></label>
+      <textarea id="f-remarks" placeholder="Any notes about this trip..."></textarea>
+    </div>
+  </div>
+
+  <button class="btn-submit" id="submit-btn" onclick="submitTrip()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+    Save to Google Sheets
+  </button>
+</div>
+
+<!-- HISTORY VIEW -->
+<div class="view" id="view-history">
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="stat-label">Total trips</div>
+      <div class="stat-value" id="stat-total">0</div>
+      <div class="stat-sub">all time</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Today</div>
+      <div class="stat-value" id="stat-today">0</div>
+      <div class="stat-sub">trips logged</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Recent trips</div>
+    <div id="history-list">
+      <div class="empty">No trips logged yet. Log your first trip!</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP VIEW -->
+<div class="view" id="view-setup">
+  <div class="card">
+    <div class="card-title">Google Sheets connection</div>
+    <div id="connection-info">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+        Paste your Google Apps Script Web App URL below to connect this app to your Google Sheet.
+      </p>
+      <input class="sheet-url-input" id="sheet-url-input" type="url" placeholder="https://script.google.com/macros/s/...">
+      <button class="save-url-btn" onclick="saveSheetUrl()">Connect to Google Sheets</button>
+    </div>
+    <div id="connected-info" style="display:none;margin-top:8px;">
+      <span class="connected-badge"><span class="dot-live"></span> Connected</span>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:8px;" id="connected-url-display"></p>
+      <button onclick="disconnectSheet()" style="font-size:12px;color:#991b1b;background:none;border:none;cursor:pointer;margin-top:6px;font-family:inherit;padding:0;">Disconnect</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Setup instructions</div>
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Create your Google Sheet</h4>
+        <p>Open Google Sheets, create a new sheet called "Trip Log" with these column headers in row 1:</p>
+        <div class="code-block">Date | Day | Start Time | User Name | Purpose | End Location | End Time | Remarks</div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Add the Apps Script</h4>
+        <p>In Google Sheets: Extensions → Apps Script → paste this code:</p>
+        <div class="code-block" id="script-code">function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet()
+    .getSheetByName("Trip Log");
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    data.date, data.day, data.startTime,
+    data.userName, data.purpose,
+    data.endLocation, data.endTime, data.remarks
+  ]);
+  return ContentService
+    .createTextOutput(JSON.stringify({status:"ok"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+        <button class="copy-btn" onclick="copyScript()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy script
+        </button>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Deploy as Web App</h4>
+        <p>In Apps Script: click Deploy → New deployment → Web App → set "Who has access" to <strong>Anyone</strong> → Deploy → copy the URL.</p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Paste the URL above</h4>
+        <p>Go to the "Google Sheets connection" section above, paste the Web App URL, and tap Connect. Done!</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Bookmark this app</div>
+    <p style="font-size:13px;color:var(--text-muted);line-height:1.6;">
+      Save this page to your phone's home screen so it opens like a native app:<br><br>
+      <strong>Android:</strong> Tap ⋮ menu → Add to Home screen<br>
+      <strong>iPhone:</strong> Tap Share → Add to Home Screen
+    </p>
+  </div>
+</div>
+
+<script>
+var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var DAY_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+var trips = JSON.parse(localStorage.getItem('vl_trips') || '[]');
+var sheetUrl = localStorage.getItem('vl_sheet_url') || '';
+
+function today() {
+  var d = new Date();
+  var dd = String(d.getDate()).padStart(2,'0');
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return dd + '-' + months[d.getMonth()] + '-' + d.getFullYear();
+}
+
+function dayName() {
+  return DAY_SHORT[new Date().getDay()];
+}
+
+function dayFull() {
+  return DAYS[new Date().getDay()];
+}
+
+function init() {
+  var t = today();
+  document.getElementById('banner-date').textContent = t;
+  document.getElementById('banner-day').textContent = dayName();
+  document.getElementById('f-date').value = t;
+
+  var now = new Date();
+  var hh = String(now.getHours()).padStart(2,'0');
+  var mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('f-start-time').value = hh + ':' + mm;
+
+  var saved = localStorage.getItem('vl_user');
+  if (saved) document.getElementById('f-user').value = saved;
+
+  updateConnectionUI();
+  renderHistory();
+  updateStats();
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('view-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'history') { renderHistory(); updateStats(); }
+}
+
+function submitTrip() {
+  var date = document.getElementById('f-date').value;
+  var startTime = document.getElementById('f-start-time').value;
+  var endTime = document.getElementById('f-end-time').value;
+  var user = document.getElementById('f-user').value.trim();
+  var purpose = document.getElementById('f-purpose').value;
+  var location = document.getElementById('f-location').value.trim();
+  var remarks = document.getElementById('f-remarks').value.trim();
+
+  if (!user || !purpose || !location || !startTime || !endTime) {
+    showToast('error', 'Please fill in all required fields.');
+    return;
+  }
+
+  localStorage.setItem('vl_user', user);
+
+  var trip = {
+    date: date, day: dayFull(),
+    startTime: formatTime(startTime),
+    endTime: formatTime(endTime),
+    userName: user, purpose: purpose,
+    endLocation: location, remarks: remarks,
+    ts: Date.now()
+  };
+
+  trips.unshift(trip);
+  localStorage.setItem('vl_trips', JSON.stringify(trips.slice(0, 200)));
+
+  if (sheetUrl) {
+    sendToSheet(trip);
+  } else {
+    showToast('success', 'Trip saved locally. Connect Google Sheets in Setup to sync.');
+  }
+
+  document.getElementById('f-start-time').value = formatTime24(endTime);
+  document.getElementById('f-end-time').value = '';
+  document.getElementById('f-purpose').value = '';
+  document.getElementById('f-location').value = '';
+  document.getElementById('f-remarks').value = '';
+
+  updateStats();
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  var parts = t.split(':');
+  var h = parseInt(parts[0]);
+  var m = parts[1];
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + m + ' ' + ampm;
+}
+
+function formatTime24(t) { return t; }
+
+function sendToSheet(trip) {
+  var btn = document.getElementById('submit-btn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+
+  fetch(sheetUrl, {
+    method: 'POST',
+    body: JSON.stringify(trip)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === 'ok') {
+      showToast('success', 'Trip saved to Google Sheets!');
+    } else {
+      showToast('error', 'Sheet responded with an error. Check your script.');
+    }
+  })
+  .catch(function() {
+    showToast('error', 'Could not reach Google Sheets. Trip saved locally.');
+  })
+  .finally(function() {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Save to Google Sheets';
+    btn.disabled = false;
+  });
+}
+
+function showToast(type, msg) {
+  document.getElementById('toast-success').classList.remove('show');
+  document.getElementById('toast-error').classList.remove('show');
+  if (type === 'success') {
+    document.getElementById('toast-success').classList.add('show');
+    setTimeout(function(){ document.getElementById('toast-success').classList.remove('show'); }, 4000);
+  } else {
+    document.getElementById('toast-error-msg').textContent = msg;
+    document.getElementById('toast-error').classList.add('show');
+    setTimeout(function(){ document.getElementById('toast-error').classList.remove('show'); }, 5000);
+  }
+}
+
+function renderHistory() {
+  var list = document.getElementById('history-list');
+  if (!trips.length) {
+    list.innerHTML = '<div class="empty">No trips logged yet.</div>';
+    return;
+  }
+  list.innerHTML = trips.slice(0, 30).map(function(t) {
+    return '<div class="history-item">'
+      + '<div class="h-dot"></div>'
+      + '<div class="h-body">'
+      + '<div class="h-title">' + escHtml(t.userName) + ' &rarr; ' + escHtml(t.endLocation) + '</div>'
+      + '<div class="h-meta">' + t.date + ' &nbsp;|&nbsp; ' + t.startTime + ' &ndash; ' + t.endTime + '</div>'
+      + '</div>'
+      + '<div class="h-badge">' + escHtml(t.purpose) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function updateStats() {
+  var t = today();
+  var todayCount = trips.filter(function(x){ return x.date === t; }).length;
+  document.getElementById('stat-total').textContent = trips.length;
+  document.getElementById('stat-today').textContent = todayCount;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function saveSheetUrl() {
+  var url = document.getElementById('sheet-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    alert('Please enter a valid Google Apps Script URL.');
+    return;
+  }
+  sheetUrl = url;
+  localStorage.setItem('vl_sheet_url', url);
+  updateConnectionUI();
+}
+
+function disconnectSheet() {
+  sheetUrl = '';
+  localStorage.removeItem('vl_sheet_url');
+  updateConnectionUI();
+}
+
+function updateConnectionUI() {
+  var hasUrl = !!sheetUrl;
+  document.getElementById('connection-status').textContent = hasUrl
+    ? 'Connected to Google Sheets' : 'Not connected to Google Sheets';
+  document.getElementById('connected-info').style.display = hasUrl ? 'block' : 'none';
+  document.getElementById('connection-info').style.display = hasUrl ? 'none' : 'block';
+  if (hasUrl) {
+    var short = sheetUrl.length > 50 ? sheetUrl.slice(0, 47) + '...' : sheetUrl;
+    document.getElementById('connected-url-display').textContent = short;
+  }
+}
+
+function copyScript() {
+  var code = document.getElementById('script-code').textContent;
+  navigator.clipboard.writeText(code).then(function() {
+    var btn = event.target.closest('.copy-btn');
+    var orig = btn.innerHTML;
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.innerHTML = orig; }, 2000);
+  });
+}
+
+init();
+</script>
+</body>
+</html>

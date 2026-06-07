@@ -576,17 +576,23 @@ function sendToSheet(trip) {
   btn.textContent = 'Saving...';
   btn.disabled = true;
 
-  fetch(sheetUrl, {
-    method: 'POST',
-    body: JSON.stringify(trip)
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(d) {
-    if (d.status === 'ok') {
-      showToast('success', 'Trip saved to Google Sheets!');
-    } else {
-      showToast('error', 'Sheet responded with an error. Check your script.');
-    }
+  // Build URL with query params (GET avoids CORS issues with Apps Script)
+  var params = new URLSearchParams({
+    date:        trip.date,
+    day:         trip.day,
+    startTime:   trip.startTime,
+    userName:    trip.userName,
+    purpose:     trip.purpose,
+    endLocation: trip.endLocation,
+    endTime:     trip.endTime,
+    remarks:     trip.remarks || ''
+  });
+
+  var url = sheetUrl + '?' + params.toString();
+
+  fetch(url, { method: 'GET', mode: 'no-cors' })
+  .then(function() {
+    showToast('success', 'Trip saved to Google Sheets!');
   })
   .catch(function() {
     showToast('error', 'Could not reach Google Sheets. Trip saved locally.');
